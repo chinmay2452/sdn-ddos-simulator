@@ -22,6 +22,11 @@ public class Main {
         ArrayList<Packet> allTraffic = generator.generateAllTraffic(nodes);
 
         // Step 3: Print total generated packets
-        System.out.println("\nSuccessfully generated " + allTraffic.size() + " packets for simulation.");
+        System.out.println("\nNodes Created: " + nodes.size());
+        System.out.println("Packets Generated: " + allTraffic.size());
+
+        // Step 4: Detect Attacks using AttackDetector
+        detection.AttackDetector detector = new detection.AttackDetector();
+        detector.analyzeTraffic(allTraffic);
     }
 }
