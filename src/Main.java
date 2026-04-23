@@ -17,31 +17,11 @@ public class Main {
 
         System.out.println("Total Nodes Created: " + nodes.size());
 
-        // Step 2: Generate Packets
-        List<Packet> packets = new ArrayList<>();
-        Random random = new Random();
+        // Step 2: Generate Traffic using TrafficGenerator
+        simulator.TrafficGenerator generator = new simulator.TrafficGenerator();
+        ArrayList<Packet> allTraffic = generator.generateAllTraffic(nodes);
 
-        for(int i = 0; i < 20; i++){
-            Node source = nodes.get(random.nextInt(nodes.size()));
-            Node destination = nodes.get(random.nextInt(nodes.size()));
-
-            Packet packet = new Packet(
-                    source.getIpAddress(),
-                    destination.getIpAddress(),
-                    random.nextInt(1000)
-            );
-
-            packets.add(packet);
-        }
-
-        // Step 3: Print Packets
-        System.out.println("\nGenerated Packets:");
-        for(Packet p : packets){
-            System.out.println(
-                    "Packet: " + p.getSourceIP() +
-                            " -> " + p.getDestinationIP() +
-                            " Size: " + p.getSize()
-            );
-        }
+        // Step 3: Print total generated packets
+        System.out.println("\nSuccessfully generated " + allTraffic.size() + " packets for simulation.");
     }
 }
