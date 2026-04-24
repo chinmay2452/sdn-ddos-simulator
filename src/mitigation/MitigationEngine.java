@@ -53,8 +53,12 @@ public class MitigationEngine {
             }
         }
 
+        if (droppedCount > 0) {
+            System.out.println("Total packets dropped: " + droppedCount);
+        }
+
         if (reroutedCount > 0) {
-            System.out.println("Traffic rerouted to safe nodes");
+            System.out.println("Traffic rerouted to safe nodes. Total rerouted: " + reroutedCount);
         }
     }
 
