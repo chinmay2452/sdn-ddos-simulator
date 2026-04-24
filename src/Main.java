@@ -36,9 +36,39 @@ public class Main {
         trafficAnalyzer.printReport();
         trafficAnalyzer.getMostActiveIP();
 
-        // Step 4: Detect Attack
-        AttackDetector attackDetector = new AttackDetector();
-        List<String> suspiciousIPs = attackDetector.analyzeTraffic(allPackets);
+        // Step 4: Choose Detector Strategy and Detect Attack
+        System.out.println("Select Detection Strategy:");
+        System.out.println("1. Threshold Detector (Volume)");
+        System.out.println("2. Rate Detector (Burst/Window)");
+        System.out.println("3. Hybrid Detector (Volume + Burst)");
+        System.out.print("Enter choice (1-3): ");
+        
+        java.util.Scanner scanner = new java.util.Scanner(System.in);
+        int choice = 1;
+        if (scanner.hasNextLine()) {
+            try {
+                choice = Integer.parseInt(scanner.nextLine().trim());
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input, defaulting to 1.");
+            }
+        }
+        
+        AttackDetector attackDetector;
+        switch (choice) {
+            case 2:
+                attackDetector = new detection.RateDetector();
+                break;
+            case 3:
+                attackDetector = new detection.HybridDetector();
+                break;
+            case 1:
+            default:
+                System.out.println("Using Default Threshold Detector.");
+                attackDetector = new detection.ThresholdDetector();
+                break;
+        }
+        
+        List<String> suspiciousIPs = attackDetector.detectAttack(allPackets);
         
         // Step 5: Apply Mitigation (SDN Controller)
         SDNController sdnController = new SDNController();
