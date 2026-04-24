@@ -14,13 +14,16 @@ public class MitigationEngine {
             return;
         }
 
+        System.out.println("ALERT: Distributed DDoS detected from multiple sources");
+        System.out.println("Blocking bot network...");
+
         // 2. Block Suspicious Nodes
         for (String ip : suspiciousIPs) {
-            System.out.println("Blocking IP: " + ip);
+            System.out.println("Blocking bot IP: " + ip);
             Node attackerNode = getNodeByIp(nodes, ip);
             if (attackerNode != null) {
                 attackerNode.setBlocked(true);
-                attackerNode.setRole("ATTACKER");
+                attackerNode.setRole("BOT");
             }
         }
 

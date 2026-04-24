@@ -36,58 +36,59 @@ public class TrafficGenerator {
         return packets;
     }
 
-    // Generates suspicious traffic (DDoS Simulation)
+    // Generates suspicious traffic (Distributed DDoS Simulation)
     public ArrayList<Packet> generateSuspiciousTraffic(List<Node> nodes, int count) {
         ArrayList<Packet> packets = new ArrayList<>();
         
-        // Select ONE attacker node
-        Node attacker = nodes.get(random.nextInt(nodes.size()));
-        
-        for (int i = 0; i < count; i++) {
-            // Send packets rapidly to multiple destinations
-            Node destination = nodes.get(random.nextInt(nodes.size()));
-            
-            // Ensure attacker is not sending to itself
-            while (attacker.getIpAddress().equals(destination.getIpAddress())) {
-                destination = nodes.get(random.nextInt(nodes.size()));
-            }
-            
-            // Packet sizes can be 500 to 1500 bytes
-            int packetSize = 500 + random.nextInt(1001); // 500 to 1500
-            
-            // Increment packet count for attacker
-            attacker.incrementPacketsSent();
-            
-            packets.add(new Packet(attacker.getIpAddress(), destination.getIpAddress(), packetSize));
+        if (nodes.size() < 6) {
+            System.out.println("Not enough nodes to simulate a botnet. Need at least 6 nodes.");
+            return packets;
         }
+
+        // Select 1 Victim Node
+        Node victim = nodes.get(random.nextInt(nodes.size()));
+        
+        // Select 3-5 Bots (excluding the victim)
+        int botCount = 3 + random.nextInt(3); // 3, 4, or 5
+        List<Node> bots = new ArrayList<>();
+        List<Node> availableNodes = new ArrayList<>(nodes);
+        availableNodes.remove(victim);
+
+        for (int i = 0; i < botCount; i++) {
+            Node bot = availableNodes.remove(random.nextInt(availableNodes.size()));
+            bots.add(bot);
+        }
+
+        // Use Botmaster to launch the attack
+        Botmaster botmaster = new Botmaster();
+        packets.addAll(botmaster.launchAttack(bots, victim));
         
         return packets;
     }
 
     // Generates a mix of normal and suspicious traffic
     public ArrayList<Packet> generateAllTraffic(List<Node> nodes) {
-        int normalCount = 50; // Example count for normal packets
-        int suspiciousCount = 200; // Example count for suspicious packets
+        int normalCount = 50; 
         
         ArrayList<Packet> normalPackets = generateNormalTraffic(nodes, normalCount);
-        ArrayList<Packet> suspiciousPackets = generateSuspiciousTraffic(nodes, suspiciousCount);
+        ArrayList<Packet> suspiciousPackets = generateSuspiciousTraffic(nodes, normalCount); // count parameter not strictly used in the new botnet logic
         
         ArrayList<Packet> allPackets = new ArrayList<>();
         allPackets.addAll(normalPackets);
         allPackets.addAll(suspiciousPackets);
         
-        // Identify the attacker IP
-        String attackerIp = "N/A";
+        // Identify the victim IP
+        String victimIp = "N/A";
         if (!suspiciousPackets.isEmpty()) {
-            attackerIp = suspiciousPackets.get(0).getSourceIP();
+            victimIp = suspiciousPackets.get(0).getDestinationIP();
         }
         
         // Print generated traffic summary
-        System.out.println("--- Traffic Generation Summary ---");
+        System.out.println("\n--- Traffic Generation Summary ---");
         System.out.println("Normal Packets Generated: " + normalCount);
-        System.out.println("Suspicious Packets Generated: " + suspiciousCount);
+        System.out.println("DDoS Packets Generated: " + suspiciousPackets.size());
         System.out.println("Total Packets Generated: " + allPackets.size());
-        System.out.println("Attacker IP: " + attackerIp);
+        System.out.println("Victim IP: " + victimIp);
         System.out.println("----------------------------------");
         
         return allPackets;
