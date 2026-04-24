@@ -3,14 +3,16 @@ package detection;
 import model.Packet;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class AttackDetector {
     private static final int THRESHOLD = 50; // Threshold for suspicious traffic
 
     // Analyzes generated packets and identifies potential DDoS attacks
-    public void analyzeTraffic(ArrayList<Packet> packets) {
+    public List<String> analyzeTraffic(ArrayList<Packet> packets) {
         HashMap<String, Integer> sourcePacketCounts = new HashMap<>();
+        List<String> suspiciousIPs = new ArrayList<>();
 
         // Count number of packets from each source IP
         for (Packet packet : packets) {
@@ -31,6 +33,7 @@ public class AttackDetector {
             // If packet count crosses the threshold, mark as suspicious
             if (count > THRESHOLD) {
                 System.out.println("\nALERT: Possible DDoS Attack from IP: " + ip);
+                suspiciousIPs.add(ip);
                 attackDetected = true;
             }
         }
@@ -39,5 +42,7 @@ public class AttackDetector {
         if (!attackDetected) {
             System.out.println("\nTraffic is safe. No suspicious patterns detected.");
         }
+        
+        return suspiciousIPs;
     }
 }

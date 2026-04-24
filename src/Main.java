@@ -3,6 +3,7 @@ import model.Packet;
 import simulator.TrafficGenerator;
 import analyzer.TrafficAnalyzer;
 import detection.AttackDetector;
+import controller.SDNController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +25,7 @@ public class Main {
         allPackets.addAll(normalTraffic);
         allPackets.addAll(suspiciousTraffic);
 
-        // Step 5: Final Output (Initial part)
+        // Initial Output
         System.out.println("Nodes Created: " + nodes.size());
         System.out.println("Packets Generated: " + allPackets.size());
         System.out.println();
@@ -37,6 +38,10 @@ public class Main {
 
         // Step 4: Detect Attack
         AttackDetector attackDetector = new AttackDetector();
-        attackDetector.analyzeTraffic(allPackets);
+        List<String> suspiciousIPs = attackDetector.analyzeTraffic(allPackets);
+        
+        // Step 5: Apply Mitigation (SDN Controller)
+        SDNController sdnController = new SDNController();
+        sdnController.applyMitigation(nodes, suspiciousIPs, allPackets);
     }
 }
