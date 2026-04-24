@@ -1,32 +1,42 @@
 import model.Node;
 import model.Packet;
+import simulator.TrafficGenerator;
+import analyzer.TrafficAnalyzer;
+import detection.AttackDetector;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class Main {
     public static void main(String[] args) {
-
-        // Step 1: Create Nodes
+        // Step 1: Create Network Nodes
         List<Node> nodes = new ArrayList<>();
-
-        for(int i = 1; i <= 10; i++){
+        for (int i = 1; i <= 10; i++) {
             nodes.add(new Node("N" + i, "192.168.1." + i));
         }
 
-        System.out.println("Total Nodes Created: " + nodes.size());
+        // Step 2: Generate Traffic
+        TrafficGenerator trafficGenerator = new TrafficGenerator();
+        ArrayList<Packet> normalTraffic = trafficGenerator.generateNormalTraffic(nodes, 50);
+        ArrayList<Packet> suspiciousTraffic = trafficGenerator.generateSuspiciousTraffic(nodes, 200);
 
-        // Step 2: Generate Traffic using TrafficGenerator
-        simulator.TrafficGenerator generator = new simulator.TrafficGenerator();
-        ArrayList<Packet> allTraffic = generator.generateAllTraffic(nodes);
+        ArrayList<Packet> allPackets = new ArrayList<>();
+        allPackets.addAll(normalTraffic);
+        allPackets.addAll(suspiciousTraffic);
 
-        // Step 3: Print total generated packets
-        System.out.println("\nNodes Created: " + nodes.size());
-        System.out.println("Packets Generated: " + allTraffic.size());
+        // Step 5: Final Output (Initial part)
+        System.out.println("Nodes Created: " + nodes.size());
+        System.out.println("Packets Generated: " + allPackets.size());
+        System.out.println();
 
-        // Step 4: Detect Attacks using AttackDetector
-        detection.AttackDetector detector = new detection.AttackDetector();
-        detector.analyzeTraffic(allTraffic);
+        // Step 3: Analyze Traffic
+        TrafficAnalyzer trafficAnalyzer = new TrafficAnalyzer();
+        trafficAnalyzer.analyzeTraffic(allPackets);
+        trafficAnalyzer.printReport();
+        trafficAnalyzer.getMostActiveIP();
+
+        // Step 4: Detect Attack
+        AttackDetector attackDetector = new AttackDetector();
+        attackDetector.analyzeTraffic(allPackets);
     }
 }

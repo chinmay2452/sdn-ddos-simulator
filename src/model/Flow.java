@@ -41,7 +41,7 @@ public class Flow {
     public long getLastUpdated() {
         return lastUpdated;
     }
-
+    
     public double getPacketsPerSecond() {
         long duration = lastUpdated - startTime;
 
