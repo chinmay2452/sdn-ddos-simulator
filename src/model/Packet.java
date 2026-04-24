@@ -32,6 +32,10 @@ public class Packet {
         return destinationIP;
     }
 
+    public void setDestinationIP(String destinationIP) {
+        this.destinationIP = destinationIP;
+    }
+
     public int getSize() {
         return size;
     }
