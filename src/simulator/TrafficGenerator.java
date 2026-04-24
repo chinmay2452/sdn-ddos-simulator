@@ -27,6 +27,9 @@ public class TrafficGenerator {
             // Generate realistic packet sizes (100 to 500 bytes)
             int packetSize = 100 + random.nextInt(401); // 100 to 500
             
+            // Increment packet count for source node
+            source.incrementPacketsSent();
+            
             packets.add(new Packet(source.getIpAddress(), destination.getIpAddress(), packetSize));
         }
         
@@ -51,6 +54,9 @@ public class TrafficGenerator {
             
             // Packet sizes can be 500 to 1500 bytes
             int packetSize = 500 + random.nextInt(1001); // 500 to 1500
+            
+            // Increment packet count for attacker
+            attacker.incrementPacketsSent();
             
             packets.add(new Packet(attacker.getIpAddress(), destination.getIpAddress(), packetSize));
         }

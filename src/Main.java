@@ -4,17 +4,26 @@ import simulator.TrafficGenerator;
 import analyzer.TrafficAnalyzer;
 import detection.AttackDetector;
 import controller.SDNController;
+import api.DashboardServer;
+import api.StateStore;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
+        // Start API Server for Dashboard
+        DashboardServer.start(8081);
+        StateStore state = StateStore.getInstance();
+        state.addLog("SDN Simulation Started");
+
         // Step 1: Create Network Nodes
         List<Node> nodes = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
             nodes.add(new Node("N" + i, "192.168.1." + i));
         }
+        state.updateNodes(nodes);
+        state.addLog("Created 10 Network Nodes");
 
         // Step 2: Generate Traffic
         TrafficGenerator trafficGenerator = new TrafficGenerator();
@@ -24,6 +33,9 @@ public class Main {
         ArrayList<Packet> allPackets = new ArrayList<>();
         allPackets.addAll(normalTraffic);
         allPackets.addAll(suspiciousTraffic);
+        
+        state.setTotalPackets(allPackets.size());
+        state.addLog("Traffic Generated: " + allPackets.size() + " packets");
 
         // Initial Output
         System.out.println("Nodes Created: " + nodes.size());
@@ -34,7 +46,8 @@ public class Main {
         TrafficAnalyzer trafficAnalyzer = new TrafficAnalyzer();
         trafficAnalyzer.analyzeTraffic(allPackets);
         trafficAnalyzer.printReport();
-        trafficAnalyzer.getMostActiveIP();
+        
+        state.addLog("Traffic analysis complete");
 
         // Step 4: Choose Detector Strategy and Detect Attack
         System.out.println("Select Detection Strategy:");
@@ -57,21 +70,35 @@ public class Main {
         switch (choice) {
             case 2:
                 attackDetector = new detection.RateDetector();
+                state.addLog("Using Rate-based Detector");
                 break;
             case 3:
                 attackDetector = new detection.HybridDetector();
+                state.addLog("Using Hybrid Detector");
                 break;
             case 1:
             default:
                 System.out.println("Using Default Threshold Detector.");
                 attackDetector = new detection.ThresholdDetector();
+                state.addLog("Using Threshold Detector");
                 break;
         }
         
         List<String> suspiciousIPs = attackDetector.detectAttack(allPackets);
+        if (!suspiciousIPs.isEmpty()) {
+            state.setAttackDetected(true);
+            state.addLog("ATTACK DETECTED from: " + suspiciousIPs);
+        }
         
         // Step 5: Apply Mitigation (SDN Controller)
         SDNController sdnController = new SDNController();
         sdnController.applyMitigation(nodes, suspiciousIPs, allPackets);
+        
+        state.updateNodes(nodes);
+        state.addLog("Mitigation applied. Blocked malicious nodes.");
+        
+        System.out.println("\n--- Dashboard is active at http://localhost:5173 ---");
+        System.out.println("--- API is active at http://localhost:8081/api/network ---");
+        System.out.println("Keep this process running to view real-time data.");
     }
-}
+}
