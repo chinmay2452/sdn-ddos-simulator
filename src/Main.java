@@ -31,11 +31,13 @@ public class Main {
                 node.setRole("SERVER"); // Victim candidate
             } else if (i == 2) {
                 node.setRole("BOTMASTER");
+            } else if (i >= 3 && i <= 6) {
+                node.setRole("BOT");
             }
             nodes.add(node);
         }
         state.updateNodes(nodes);
-        state.addLog("Network Initialized: 10 Nodes, 1 Server, 1 Botmaster");
+        state.addLog("Network Initialized: 10 Nodes, 1 Server, 1 Botmaster, 4 Bots");
 
         // Step 2: Launch the Visualizer UI
         System.out.println("Launching SDN Security Dashboard...");

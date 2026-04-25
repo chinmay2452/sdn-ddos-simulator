@@ -12,7 +12,7 @@ public class RateDetector extends AttackDetector {
     @Override
     public List<String> detectAttack(List<Packet> packets) {
         List<String> suspiciousIPs = new ArrayList<>();
-        System.out.println("\n--- Rate (Burst) Detection Report ---");
+        api.StateStore.getInstance().addLog("\n--- Rate (Burst) Detection Report ---");
 
         boolean attackDetected = false;
 
@@ -30,7 +30,7 @@ public class RateDetector extends AttackDetector {
                 int count = windowCounts.get(ip);
                 if (count > BURST_THRESHOLD) {
                     if (!suspiciousIPs.contains(ip)) {
-                        System.out.println("ALERT: Burst Attack Detected from IP: " + ip 
+                        api.StateStore.getInstance().addLog("ALERT: Burst Attack Detected from IP: " + ip 
                             + " (" + count + " packets in a window of " + (end - i) + ")");
                         suspiciousIPs.add(ip);
                         attackDetected = true;
@@ -40,7 +40,7 @@ public class RateDetector extends AttackDetector {
         }
 
         if (!attackDetected) {
-            System.out.println("Traffic is safe. No burst patterns detected.");
+            api.StateStore.getInstance().addLog("Traffic is safe. No burst patterns detected.");
         }
 
         return suspiciousIPs;

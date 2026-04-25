@@ -1,5 +1,7 @@
 package mitigation;
 
+import api.FlowEntry;
+import api.StateStore;
 import model.Node;
 import model.Packet;
 import java.util.*;
@@ -7,25 +9,33 @@ import java.util.*;
 public class MitigationEngine {
 
     public void applyMitigation(List<Node> nodes, List<String> suspiciousIPs, List<Packet> packets) {
-        System.out.println("\n--- Mitigation Engine Actions ---");
+        api.StateStore.getInstance().addLog("\n--- Mitigation Engine Actions ---");
 
         if (suspiciousIPs == null || suspiciousIPs.isEmpty()) {
-            System.out.println("No suspicious nodes detected. No mitigation required.");
+            api.StateStore.getInstance().addLog("No suspicious nodes detected. No mitigation required.");
             return;
         }
 
-        System.out.println("ALERT: Distributed DDoS detected from multiple sources");
-        System.out.println("Blocking bot network...");
+        api.StateStore.getInstance().addLog("ALERT: Distributed DDoS detected from multiple sources");
+        api.StateStore.getInstance().addLog("Blocking bot network...");
 
         // 1. Block Suspicious Nodes and identify the Victim
         String victimIP = identifyVictim(packets, suspiciousIPs);
         for (String ip : suspiciousIPs) {
-            System.out.println("Blocking bot IP: " + ip);
+            StateStore.getInstance().addLog("Blocking bot IP: " + ip);
+            // Push DROP flow rule into the SDN flow table
+            StateStore.getInstance().addFlowEntry(FlowEntry.dropBot(ip));
+            // Set bandwidth to 0 (blocked)
+            StateStore.getInstance().updateBandwidth(ip, 0);
             Node attackerNode = getNodeByIp(nodes, ip);
             if (attackerNode != null) {
                 attackerNode.setBlocked(true);
                 attackerNode.setRole("BOT");
             }
+        }
+        // Push rate-limit rule for the victim
+        if (!victimIP.equals("None")) {
+            StateStore.getInstance().addFlowEntry(FlowEntry.rateLimitVictim(victimIP));
         }
 
         // 2. Create Safe Node Pool (Exclude bots and victim)
@@ -39,10 +49,10 @@ public class MitigationEngine {
         }
 
         if (safeNodeIPs.isEmpty()) {
-            System.out.println("No safe nodes available for rerouting. All malicious packets will be dropped.");
+            api.StateStore.getInstance().addLog("No safe nodes available for rerouting. All malicious packets will be dropped.");
         }
 
-        System.out.println("Applying intelligent traffic management...");
+        api.StateStore.getInstance().addLog("Applying intelligent traffic management...");
 
         int droppedCount = 0;
         int reroutedCount = 0;
@@ -62,8 +72,12 @@ public class MitigationEngine {
                     
                     // Reroute the packet
                     packet.setDestinationIP(leastLoadedNode);
-                    System.out.println("Traffic rerouted from " + srcIp + " -> " + leastLoadedNode + " (load-balanced)");
+                    StateStore.getInstance().addLog("Traffic rerouted from " + srcIp + " -> " + leastLoadedNode + " (load-balanced)");
                     
+                    // Push reroute flow rule (only once per source)
+                    if (nodeLoad.get(leastLoadedNode) == 0) {
+                        StateStore.getInstance().addFlowEntry(FlowEntry.rerouteTraffic(victimIP, leastLoadedNode));
+                    }
                     // Update load
                     nodeLoad.put(leastLoadedNode, nodeLoad.get(leastLoadedNode) + 1);
                     reroutedCount++;
@@ -74,16 +88,20 @@ public class MitigationEngine {
             }
         }
 
-        System.out.println("\n--- Mitigation Summary ---");
-        System.out.println("Total packets dropped: " + droppedCount);
-        System.out.println("Total packets rerouted: " + reroutedCount);
+        StateStore.getInstance().addLog("\n--- Mitigation Summary ---");
+        StateStore.getInstance().addLog("Total packets dropped: " + droppedCount);
+        StateStore.getInstance().addLog("Total packets rerouted: " + reroutedCount);
         if (reroutedCount > 0) {
-            System.out.println("Rerouting Distribution:");
+            StateStore.getInstance().addLog("Rerouting Distribution:");
             for (Map.Entry<String, Integer> entry : nodeLoad.entrySet()) {
                 if (entry.getValue() > 0) {
-                    System.out.println(" - " + entry.getKey() + ": " + entry.getValue() + " packets");
+                    StateStore.getInstance().addLog(" - " + entry.getKey() + ": " + entry.getValue() + " packets");
                 }
             }
+        }
+        // Update victim bandwidth back to normal after mitigation
+        if (!victimIP.equals("None")) {
+            StateStore.getInstance().updateBandwidth(victimIP, 5 + new Random().nextInt(10));
         }
     }
 

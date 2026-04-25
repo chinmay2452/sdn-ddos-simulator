@@ -20,24 +20,24 @@ public class ThresholdDetector extends AttackDetector {
             sourcePacketCounts.put(sourceIP, sourcePacketCounts.getOrDefault(sourceIP, 0) + 1);
         }
 
-        System.out.println("\n--- Threshold Detection Report ---");
+        api.StateStore.getInstance().addLog("\n--- Threshold Detection Report ---");
         boolean attackDetected = false;
 
         for (Map.Entry<String, Integer> entry : sourcePacketCounts.entrySet()) {
             String ip = entry.getKey();
             int count = entry.getValue();
 
-            System.out.println(ip + " -> " + count + " packets (Total)");
+            api.StateStore.getInstance().addLog(ip + " -> " + count + " packets (Total)");
 
             if (count > THRESHOLD) {
-                System.out.println("ALERT: Possible DDoS Attack from IP: " + ip + " (Exceeded threshold of " + THRESHOLD + ")");
+                api.StateStore.getInstance().addLog("ALERT: Possible DDoS Attack from IP: " + ip + " (Exceeded threshold of " + THRESHOLD + ")");
                 suspiciousIPs.add(ip);
                 attackDetected = true;
             }
         }
 
         if (!attackDetected) {
-            System.out.println("Traffic is safe. No suspicious volume detected.");
+            api.StateStore.getInstance().addLog("Traffic is safe. No suspicious volume detected.");
         }
         
         return suspiciousIPs;

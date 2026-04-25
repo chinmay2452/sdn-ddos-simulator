@@ -11,7 +11,7 @@ public class Botmaster {
 
     public List<Packet> launchAttack(List<Node> bots, Node victim) {
         List<Packet> attackPackets = new ArrayList<>();
-        System.out.println("\n[Botmaster] Launching coordinated DDoS attack on " + victim.getIpAddress());
+        api.StateStore.getInstance().addLog("\n[Botmaster] Launching coordinated DDoS attack on " + victim.getIpAddress());
         
         for (Node bot : bots) {
             // Each bot sends a medium number of packets (e.g., 30-60)
@@ -21,7 +21,7 @@ public class Botmaster {
                 bot.incrementPacketsSent();
                 attackPackets.add(new Packet(bot.getIpAddress(), victim.getIpAddress(), packetSize));
             }
-            System.out.println("Bot " + bot.getIpAddress() + " is flooding " + victim.getIpAddress() + " with " + botPacketCount + " packets.");
+            api.StateStore.getInstance().addLog("Bot " + bot.getIpAddress() + " is flooding " + victim.getIpAddress() + " with " + botPacketCount + " packets.");
         }
         
         return attackPackets;

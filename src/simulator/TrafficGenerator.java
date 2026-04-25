@@ -6,6 +6,9 @@ import model.Packet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import api.StateStore;
+import java.util.List;
+import java.util.Random;
 
 public class TrafficGenerator {
     private Random random = new Random();
@@ -41,22 +44,33 @@ public class TrafficGenerator {
         ArrayList<Packet> packets = new ArrayList<>();
         
         if (nodes.size() < 6) {
-            System.out.println("Not enough nodes to simulate a botnet. Need at least 6 nodes.");
+            StateStore.getInstance().addLog("Not enough nodes to simulate a botnet.");
             return packets;
         }
 
-        // Select 1 Victim Node
-        Node victim = nodes.get(random.nextInt(nodes.size()));
-        
-        // Select 3-5 Bots (excluding the victim)
-        int botCount = 3 + random.nextInt(3); // 3, 4, or 5
-        List<Node> bots = new ArrayList<>();
-        List<Node> availableNodes = new ArrayList<>(nodes);
-        availableNodes.remove(victim);
+        // Target specifically the SERVER
+        Node victim = null;
+        for (Node n : nodes) {
+            if ("SERVER".equals(n.getRole())) {
+                victim = n;
+                break;
+            }
+        }
+        if (victim == null) {
+            victim = nodes.get(random.nextInt(nodes.size()));
+        }
 
-        for (int i = 0; i < botCount; i++) {
-            Node bot = availableNodes.remove(random.nextInt(availableNodes.size()));
-            bots.add(bot);
+        // Select bots specifically designated with BOT role
+        List<Node> bots = new ArrayList<>();
+        for (Node n : nodes) {
+            if ("BOT".equals(n.getRole()) && !n.isBlocked()) {
+                bots.add(n);
+            }
+        }
+        
+        if (bots.isEmpty()) {
+            StateStore.getInstance().addLog("No active bots available to launch attack.");
+            return packets;
         }
 
         // Use Botmaster to launch the attack
@@ -84,12 +98,11 @@ public class TrafficGenerator {
         }
         
         // Print generated traffic summary
-        System.out.println("\n--- Traffic Generation Summary ---");
-        System.out.println("Normal Packets Generated: " + normalCount);
-        System.out.println("DDoS Packets Generated: " + suspiciousPackets.size());
-        System.out.println("Total Packets Generated: " + allPackets.size());
-        System.out.println("Victim IP: " + victimIp);
-        System.out.println("----------------------------------");
+        StateStore.getInstance().addLog("--- Traffic Generation Summary ---");
+        StateStore.getInstance().addLog("Normal Packets: " + normalCount);
+        StateStore.getInstance().addLog("DDoS Packets: " + suspiciousPackets.size());
+        StateStore.getInstance().addLog("Total Packets: " + allPackets.size());
+        StateStore.getInstance().addLog("Victim IP: " + victimIp);
         
         return allPackets;
     }

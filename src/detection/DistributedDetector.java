@@ -27,7 +27,7 @@ public class DistributedDetector extends AttackDetector {
             }
         }
 
-        System.out.println("\n--- Distributed DDoS Detection Report ---");
+        api.StateStore.getInstance().addLog("\n--- Distributed DDoS Detection Report ---");
         boolean distributedAttack = false;
 
         for (Map.Entry<String, Integer> entry : destCounts.entrySet()) {
@@ -36,12 +36,12 @@ public class DistributedDetector extends AttackDetector {
             List<String> sources = destSources.get(victimIP);
 
             if (totalPackets > AGGREGATE_THRESHOLD && sources.size() >= 3) {
-                System.out.println("ALERT: Distributed DDoS Attack Detected!");
-                System.out.println("Victim IP: " + victimIP);
-                System.out.println("Total Incoming Packets: " + totalPackets);
-                System.out.println("Attack Sources (" + sources.size() + " bots):");
+                api.StateStore.getInstance().addLog("ALERT: Distributed DDoS Attack Detected!");
+                api.StateStore.getInstance().addLog("Victim IP: " + victimIP);
+                api.StateStore.getInstance().addLog("Total Incoming Packets: " + totalPackets);
+                api.StateStore.getInstance().addLog("Attack Sources (" + sources.size() + " bots):");
                 for (String src : sources) {
-                    System.out.println(" - " + src);
+                    api.StateStore.getInstance().addLog(" - " + src);
                     if (!suspiciousIPs.contains(src)) {
                         suspiciousIPs.add(src);
                     }
@@ -51,7 +51,7 @@ public class DistributedDetector extends AttackDetector {
         }
 
         if (!distributedAttack) {
-            System.out.println("No distributed attack patterns detected.");
+            api.StateStore.getInstance().addLog("No distributed attack patterns detected.");
         }
 
         return suspiciousIPs;

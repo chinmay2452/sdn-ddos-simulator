@@ -8,7 +8,7 @@ public class HybridDetector extends AttackDetector {
     
     @Override
     public List<String> detectAttack(List<Packet> packets) {
-        System.out.println("\n=== Running Hybrid Detection (Volume + Distributed) ===");
+        api.StateStore.getInstance().addLog("\n=== Running Hybrid Detection (Volume + Distributed) ===");
         
         AttackDetector threshold = new ThresholdDetector();
         List<String> thresholdIPs = threshold.detectAttack(packets);
@@ -16,7 +16,7 @@ public class HybridDetector extends AttackDetector {
         AttackDetector distributed = new DistributedDetector();
         List<String> distributedIPs = distributed.detectAttack(packets);
 
-        System.out.println("\n--- Hybrid Detection Summary ---");
+        api.StateStore.getInstance().addLog("\n--- Hybrid Detection Summary ---");
         List<String> combinedIPs = new ArrayList<>();
 
         // Add all unique suspicious IPs from both detectors
@@ -28,12 +28,12 @@ public class HybridDetector extends AttackDetector {
         }
 
         if (combinedIPs.isEmpty()) {
-            System.out.println("Traffic appears safe based on hybrid analysis.");
+            api.StateStore.getInstance().addLog("Traffic appears safe based on hybrid analysis.");
         } else {
-            System.out.println("Hybrid analysis identified " + combinedIPs.size() + " unique suspicious sources.");
+            api.StateStore.getInstance().addLog("Hybrid analysis identified " + combinedIPs.size() + " unique suspicious sources.");
             for (String ip : combinedIPs) {
                 String level = (thresholdIPs.contains(ip) && distributedIPs.contains(ip)) ? "CRITICAL" : "WARNING";
-                System.out.println("[" + level + "] Suspicious IP: " + ip);
+                api.StateStore.getInstance().addLog("[" + level + "] Suspicious IP: " + ip);
             }
         }
 
