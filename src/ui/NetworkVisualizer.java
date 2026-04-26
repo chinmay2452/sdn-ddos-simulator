@@ -31,6 +31,9 @@ public class NetworkVisualizer extends JFrame implements StateStore.StateChangeL
     private BandwidthPanel bandwidthPanel;
     private FlowTablePanel flowTablePanel;
 
+    // Coalescing flag: prevents flooding the EDT with redundant repaints
+    private volatile boolean updatePending = false;
+
     public NetworkVisualizer() {
         this.state = StateStore.getInstance();
         this.state.addListener(this);
@@ -82,14 +85,20 @@ public class NetworkVisualizer extends JFrame implements StateStore.StateChangeL
 
     @Override
     public void onStateChange() {
-        SwingUtilities.invokeLater(() -> {
-            topologyPanel.updateState();
-            metricsPanel.updateState();
-            logPanel.updateState();
-            bandwidthPanel.updateState();
-            flowTablePanel.updateState();
-            repaint();
-        });
+        // Only schedule ONE repaint even if many state changes fire back-to-back.
+        // This is the key fix for lag during rapid mitigation logging.
+        if (!updatePending) {
+            updatePending = true;
+            SwingUtilities.invokeLater(() -> {
+                updatePending = false;
+                topologyPanel.updateState();
+                metricsPanel.updateState();
+                logPanel.updateState();
+                bandwidthPanel.updateState();
+                flowTablePanel.updateState();
+                repaint();
+            });
+        }
     }
 
     // =========================================================
@@ -428,7 +437,8 @@ public class NetworkVisualizer extends JFrame implements StateStore.StateChangeL
                 }
             }
 
-            // Update bar values and colors
+            // Update bar values and colors — do NOT call revalidate() here,
+            // bars are already laid out; revalidate causes expensive full relayout every tick
             Map<String, Integer> bw = state.getNodeBandwidth();
             for (Node n : state.getNodes()) {
                 JProgressBar bar = bars.get(n.getIpAddress());
@@ -436,12 +446,10 @@ public class NetworkVisualizer extends JFrame implements StateStore.StateChangeL
                 int val = bw.getOrDefault(n.getIpAddress(), 0);
                 bar.setValue(val);
                 bar.setString(val + "%");
-                // Color thresholds
                 if (val <= 30)      bar.setForeground(new Color(50, 200, 80));
                 else if (val <= 60) bar.setForeground(new Color(230, 150, 30));
                 else                bar.setForeground(new Color(220, 50, 50));
             }
-            revalidate();
             repaint();
         }
     }
@@ -452,6 +460,8 @@ public class NetworkVisualizer extends JFrame implements StateStore.StateChangeL
     class FlowTablePanel extends JPanel {
         private DefaultTableModel tableModel;
         private JTable table;
+        // Track how many rows we have already rendered so we only append new ones
+        private int renderedRowCount = 0;
 
         FlowTablePanel() {
             setLayout(new BorderLayout());
@@ -504,15 +514,23 @@ public class NetworkVisualizer extends JFrame implements StateStore.StateChangeL
 
         void updateState() {
             List<FlowEntry> entries = state.getFlowTable();
-            tableModel.setRowCount(0); // refresh all rows
-            for (FlowEntry e : entries) {
-                tableModel.addRow(new Object[]{
-                    e.getPriorityStr(),
-                    e.getMatchRule(),
-                    e.getActionStr(),
-                    e.getStatus(),
-                    e.getTimestamp()
-                });
+            // Only append new rows — never rebuild the entire table
+            if (entries.size() > renderedRowCount) {
+                for (int i = renderedRowCount; i < entries.size(); i++) {
+                    FlowEntry e = entries.get(i);
+                    tableModel.addRow(new Object[]{
+                        e.getPriorityStr(),
+                        e.getMatchRule(),
+                        e.getActionStr(),
+                        e.getStatus(),
+                        e.getTimestamp()
+                    });
+                }
+                renderedRowCount = entries.size();
+            } else if (entries.size() < renderedRowCount) {
+                // Full reset happened — rebuild cleanly
+                tableModel.setRowCount(0);
+                renderedRowCount = 0;
             }
         }
     }
