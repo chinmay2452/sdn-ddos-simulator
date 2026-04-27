@@ -9,6 +9,7 @@ import detection.AttackDetector;
 import detection.ThresholdDetector;
 import detection.DistributedDetector;
 import detection.HybridDetector;
+import detection.RateDetector;
 import controller.SDNController;
 
 import javax.swing.*;
@@ -279,9 +280,9 @@ public class NetworkVisualizer extends JFrame implements StateStore.StateChangeL
                 new Font("SansSerif", Font.BOLD, 12), new Color(180, 200, 255)));
             setBackground(new Color(22, 22, 38));
 
-            String[] strategies = {"Threshold (Volume)", "Distributed (Botnet)", "Hybrid (All)"};
+            String[] strategies = {"Threshold (Volume)", "Distributed (Botnet)", "Rate (Flow-based)", "Hybrid (All)"};
             detectorBox = new JComboBox<>(strategies);
-            detectorBox.setSelectedIndex(2);
+            detectorBox.setSelectedIndex(3);
             detectorBox.setBackground(new Color(30, 30, 50));
             detectorBox.setForeground(Color.WHITE);
 
@@ -388,6 +389,7 @@ public class NetworkVisualizer extends JFrame implements StateStore.StateChangeL
             int choice = detectorBox.getSelectedIndex();
             if (choice == 0) return new ThresholdDetector();
             if (choice == 1) return new DistributedDetector();
+            if (choice == 2) return new RateDetector();
             return new HybridDetector();
         }
     }
